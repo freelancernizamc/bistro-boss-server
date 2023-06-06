@@ -60,13 +60,14 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const usersCollection = client.db("bistroDB").collection("users");
         const menuCollection = client.db("bistroDB").collection("menu");
         const reviewCollection = client.db("bistroDB").collection("reviews");
         const cartCollection = client.db("bistroDB").collection("carts");
         const paymentCollection = client.db("bistroDB").collection("payments");
+
 
         app.post('/jwt', (req, res) => {
             const user = req.body;
@@ -117,11 +118,11 @@ async function run() {
         app.get('/users/admin/:email', verifyJWT, async (req, res) => {
             // console.log('admin');
             const email = req.params.email;
-            // console.log(email);
+            console.log(email);
 
             if (req.decoded.email !== email) {
                 return res.send({ admin: false })
-                // console.log('!admin')
+                console.log('!admin')
             }
 
             const query = { email: email }
@@ -190,6 +191,8 @@ async function run() {
             res.send(result);
         });
 
+
+
         app.post('/carts', async (req, res) => {
             const item = req.body;
             const result = await cartCollection.insertOne(item);
@@ -202,6 +205,8 @@ async function run() {
             const result = await cartCollection.deleteOne(query);
             res.send(result);
         })
+
+
 
         // create payment intent
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
@@ -229,6 +234,36 @@ async function run() {
 
             res.send({ insertResult, deleteResult });
         })
+
+        app.get('/payments', async (req, res) => {
+
+            const email = req.query.email;
+
+            if (!email) {
+                res.send([]);
+                return
+            }
+
+            // const query = { email: email };
+            const result = await paymentCollection.find({ email }).toArray();
+            res.send(result);
+        });
+
+        app.get('/totalOrders', async (req, res) => {
+
+            const email = req.query.email;
+
+            if (!email) {
+                res.send([]);
+                return
+            }
+
+            // const query = { email: email };
+            const result = await cartCollection.find({ email }).toArray();
+            res.send(result);
+        });
+
+
 
         app.get('/admin-stats', verifyJWT, verifyAdmin, async (req, res) => {
             const users = await usersCollection.estimatedDocumentCount();
